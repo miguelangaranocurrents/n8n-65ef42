@@ -100,15 +100,18 @@ export const coloringStateField = StateField.define<DecorationSet>({
 			}
 
 			for (const txEffect of transaction.effects) {
+				// `filter` keeps a decoration when it returns true, so only the decoration
+				// with exactly the target range is dropped. Dropping anything that shares a
+				// single endpoint would also erase neighbouring resolvables.
 				if (txEffect.is(coloringStateEffects.removeColorEffect)) {
 					colorings = colorings.update({
-						filter: (from, to) => txEffect.value.from !== from && txEffect.value.to !== to,
+						filter: (from, to) => txEffect.value.from !== from || txEffect.value.to !== to,
 					});
 				}
 
 				if (txEffect.is(coloringStateEffects.addColorEffect)) {
 					colorings = colorings.update({
-						filter: (from, to) => txEffect.value.from !== from && txEffect.value.to !== to,
+						filter: (from, to) => txEffect.value.from !== from || txEffect.value.to !== to,
 					});
 
 					const decoration = resolvableStateToDecoration[txEffect.value.state ?? 'pending'];
