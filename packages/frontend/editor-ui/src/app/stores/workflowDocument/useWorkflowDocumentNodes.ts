@@ -574,6 +574,12 @@ export function useWorkflowDocumentNodes(deps: WorkflowDocumentNodesDeps) {
 		invalid: INodeCredentialsDetails;
 		type: string;
 	}) {
+		let replaced = false;
+		const replace = (node: INodeUi) => {
+			(node.credentials as INodeCredentials)[data.type] = data.credentials;
+			replaced = true;
+		};
+
 		nodes.value.forEach((node: INodeUi) => {
 			const nodeCredentials: INodeCredentials | undefined = (node as unknown as INode).credentials;
 			if (!nodeCredentials?.[data.type]) {
@@ -586,21 +592,28 @@ export function useWorkflowDocumentNodes(deps: WorkflowDocumentNodesDeps) {
 				typeof nodeCredentialDetails === 'string' &&
 				nodeCredentialDetails === data.invalid.name
 			) {
-				(node.credentials as INodeCredentials)[data.type] = data.credentials;
+				replace(node);
 				return;
 			}
 
 			if (nodeCredentialDetails.id === null) {
 				if (nodeCredentialDetails.name === data.invalid.name) {
-					(node.credentials as INodeCredentials)[data.type] = data.credentials;
+					replace(node);
 				}
 				return;
 			}
 
 			if (nodeCredentialDetails.id === data.invalid.id) {
-				(node.credentials as INodeCredentials)[data.type] = data.credentials;
+				replace(node);
 			}
 		});
+
+		// The swap is made in place, so the caller's later `updateNodeProperties` sees
+		// no difference and would not mark the workflow dirty. Mark it here so the
+		// replacement is saved.
+		if (replaced) {
+			void onStateDirty.trigger();
+		}
 	}
 
 	// Assign credential to all nodes that support it but don't have it set
@@ -654,6 +667,12 @@ export function useWorkflowDocumentNodes(deps: WorkflowDocumentNodesDeps) {
 
 			updatedNodesCount++;
 		});
+
+		// Same in-place write as replaceInvalidWorkflowCredentials: nothing else marks
+		// these other nodes as changed, so do it here.
+		if (updatedNodesCount > 0) {
+			void onStateDirty.trigger();
+		}
 
 		return updatedNodesCount;
 	}
