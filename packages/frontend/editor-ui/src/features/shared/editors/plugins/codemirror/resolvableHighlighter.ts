@@ -1,7 +1,7 @@
 import type { DecorationSet } from '@codemirror/view';
 import { EditorView, Decoration } from '@codemirror/view';
 import { StateField, StateEffect, RangeSet } from '@codemirror/state';
-import type { Range } from '@codemirror/state';
+import type { Extension, Range } from '@codemirror/state';
 import { tags } from '@lezer/highlight';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { captureException } from '@sentry/vue';
@@ -172,8 +172,17 @@ const resolvableStyle = syntaxHighlighting(
 	]),
 );
 
+/**
+ * The field and theme that `addColor`/`removeColor` append on demand. An editor created
+ * with segments already present should install these up front: a field appended in the
+ * same transaction as the first colouring effects does not receive those effects, so
+ * the initial resolvables would otherwise go unhighlighted until the next update.
+ */
+const colorExtensions: Extension[] = [coloringStateField, resolvablesTheme];
+
 export const highlighter = {
 	addColor,
 	removeColor,
 	resolvableStyle,
+	colorExtensions,
 };
