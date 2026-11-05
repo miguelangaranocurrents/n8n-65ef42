@@ -110,7 +110,6 @@ function initializeEditor() {
 				EditorState.readOnly.of(true),
 				EditorView.lineWrapping,
 				EditorView.domEventHandlers({ scroll: (_, view) => forceParse(view) }),
-				...highlighter.colorExtensions,
 				...props.extensions,
 			],
 		}),
